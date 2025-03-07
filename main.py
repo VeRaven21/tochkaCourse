@@ -38,4 +38,4 @@ def delete_item(id: int) -> None:
         raise HTTPException(status_code=404, detail="Item not found")
     del storage[id]
 
-uvicorn.run(app, host="0.0.0.0", port=8888)
+uvicorn.run(app, host="127.0.0.1", port=8888)
