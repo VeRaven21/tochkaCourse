@@ -6,8 +6,7 @@ from typing import Literal
 class User(BaseModel):
     name: str    
     role: Literal["USER", "ADMIN"]
-    balance: float = 0.0
-    balance_lock: float = 0.0
-    regdate: datetime = datetime.now()
+    balance: float
+    balance_lock: float
+    regdate: datetime
     api_key: str
-
