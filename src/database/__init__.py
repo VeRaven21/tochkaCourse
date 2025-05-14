@@ -42,16 +42,15 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     role = Column(RolesEnum, nullable=False)
-    balance = Column(Float, default=0.0)
-    balance_lock = Column(Float, default=0.0)
     regdate = Column(DateTime, default=datetime.now(timezone.utc))
     api_key = Column(String, unique=True, nullable=False)
 
 class Instrument(Base):
     __tablename__ = 'instruments'
 
-    ticker = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
+    id = Column(Integer, primary_key=True)
+    ticker = Column(String)
+    
 
 class LimitOrder(Base):
     __tablename__ = 'limit_orders'
@@ -77,6 +76,16 @@ class MarketOrder(Base):
     ticker = Column(String, ForeignKey('instruments.ticker'), nullable=False)
     qty = Column(Integer, nullable=False)
     qty_filled = Column(Integer, default=0)
+
+class Balance(Base):
+    __tablename__ = 'balances'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    ticker = Column(String, ForeignKey('instruments.ticker'), nullable=False)
+    qty = Column(Integer, nullable=False)
+    lock_qty = Column(Integer, default=0)
 
 # Create all tables
 Base.metadata.create_all(engine)

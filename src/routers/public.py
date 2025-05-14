@@ -6,7 +6,7 @@ import secrets
 import sys
 
 sys.path.append("..")
-from database import Instrument, User, get_db
+from database import Instrument, User, get_db, Balance
 from models import User as UserModel
 
 from sqlalchemy import select
@@ -75,8 +75,6 @@ def register(username: str):
     user = User(
         name=username,
         role='USER',
-        balance=0.0,
-        balance_lock=0.0,
         regdate=datetime.now(timezone.utc),
         api_key=token
     )
@@ -87,7 +85,16 @@ def register(username: str):
         print(e)
         raise HTTPException(status_code=422, detail=str(e))
 
+    balance = Balance(
+        user_id=user.id,
+        timestamp=datetime.now(timezone.utc),
+        ticker="RUB", # RUB is base currency
+        qty=0,
+        lock_qty=0
+    )
+
     db.add(user)
+    db.add(balance)
     db.commit()
     db.refresh(user)
     db.close()
