@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import select
 from tabnanny import verbose
 from dotenv import load_dotenv
 import os
@@ -91,6 +92,20 @@ class Balance(Base):
 Base.metadata.create_all(engine)
 
 Sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Ensure deafult ticker exists
+def default_ticker(ticker: str):
+    db = Sessionlocal()
+    stmt = select(Instrument).where(Instrument.ticker == ticker)
+    instrument = db.execute(stmt).scalars().first()
+    if not instrument:
+        instrument = Instrument(ticker=ticker)
+        db.add(instrument)
+        db.commit()
+        db.refresh(instrument)
+    db.close()
+
+ticker = os.getenv("DEFAULT_TICKER", "RUB")
 
 def get_db():
     db = Sessionlocal()

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import sys 
 sys.path.append("..")
-from database import Instrument, User, get_db
+from database import Balance, Instrument, User, get_db
 
 router = APIRouter(
     prefix="/admin",
@@ -58,7 +58,6 @@ def delete_user(user_id: str, authorization: str):
     }
 
 
-# !WIP Do not use yet
 @router.post("balance/deposit")
 def deposit_balance(request: DepositRequest, authorization: str):
     db = next(get_db())
@@ -68,6 +67,7 @@ def deposit_balance(request: DepositRequest, authorization: str):
     if not user:
         raise HTTPException(422, detail="User is not an admin")
     
+    # Check if target user exists
     stmt = select(User).where(User.id == int(request.user_id))
     user = db.execute(stmt).scalars().first()
     if not user:
@@ -81,7 +81,11 @@ def deposit_balance(request: DepositRequest, authorization: str):
     if request.amount <= 0:
         raise HTTPException(422, detail="Amount must be greater than 0")
     
+    stmt = select(Balance).where(Balance.user_id == user.id).where(Balance.ticker == request.ticker)
+
     # Update the user's balance
-    user.balance += request.amount
+    balance = db.execute(stmt).scalars().first()
+    balance.qty += request.amount
+    
     db.commit()
     db.close()
