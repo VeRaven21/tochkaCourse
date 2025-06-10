@@ -120,3 +120,24 @@ def get_instrumenst():
     db.close()
 
     return [{"name": el.name, "ticker": el.ticker} for el in instruments]
+
+
+@router.get("/admins")
+def get_admins():
+    """
+    Temporary solution to get list of admin api keys
+    Get all admins
+
+
+    TODO: Remove this endpoint in production
+
+    Returns:
+        Array[Dict]: List of admins
+    """
+    db = next(get_db())
+
+    stmt = select(User).where(User.role == 'ADMIN')
+    admins = db.execute(stmt).scalars().all()
+    db.close()
+
+    return [{"id": el.id, "name": el.name, "role": el.role, "api_key": el.api_key} for el in admins]
