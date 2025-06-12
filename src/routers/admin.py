@@ -1,3 +1,4 @@
+import string
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
@@ -18,6 +19,27 @@ class DepositRequest(BaseModel):
     ticker: str
     amount: float
 
+class instrumentRequest(BaseModel):
+    name: string
+    ticker: string
+
+
+def verify_admin_key(api_key: str) -> bool:
+    """Check if the user key is valid and the user is an admin
+
+    Args:
+        api_key (str): Api key to check
+
+    Returns:
+        bool: Returns True if the key is valid and the user is an admin, False otherwise
+    """
+    db = next(get_db())
+    stmt = select(User).where(User.api_key == api_key).where(User.role == 'ADMIN')
+    user = db.execute(stmt).scalars().first()
+    
+    db.close()
+
+    return user is not None
 
 @router.delete("/user/{user_id}")
 def delete_user(user_id: str, authorization: str):
@@ -36,9 +58,7 @@ def delete_user(user_id: str, authorization: str):
     """
     db = next(get_db())
     # Check if the user is an admin
-    stmt = select(User).where(User.api_key == authorization).where(User.role == 'ADMIN')
-    user = db.execute(stmt).scalars().first()
-    if not user:
+    if not verify_admin_key(authorization):
         raise HTTPException(422, detail="User is not an admin")
     
     stmt = select(User).where(User.id == int(user_id))
@@ -62,9 +82,7 @@ def delete_user(user_id: str, authorization: str):
 def deposit_balance(request: DepositRequest, authorization: str):
     db = next(get_db())
     # Check if the user is an admin
-    stmt = select(User).where(User.api_key == authorization).where(User.role == 'ADMIN')
-    user = db.execute(stmt).scalars().first()
-    if not user:
+    if not verify_admin_key(authorization):
         raise HTTPException(422, detail="User is not an admin")
     
     # Check if target user exists
@@ -89,3 +107,34 @@ def deposit_balance(request: DepositRequest, authorization: str):
     
     db.commit()
     db.close()
+
+@router.post("/instrument")
+def add_instrument(request: instrumentRequest, authorization: str):
+    """Creates a new instrument
+
+    Args:
+        request (_type_): _description_
+        authorization (_type_): _description_
+    """
+
+    db = next(get_db())
+    # Check if the user is an admin
+    if not verify_admin_key(authorization):
+        raise HTTPException(422, detail="User is not an admin")
+    
+    # Check if the instrument already exists
+    stmt = select(Instrument).where(Instrument.ticker == request.ticker)
+    instrument = db.execute(stmt).scalars().first()
+    if instrument:
+        raise HTTPException(422, detail="Instrument already exists")
+    
+    # Create a new instrument
+    instrument = Instrument(
+        name=request.name,
+        ticker=request.ticker
+    )
+    db.add(instrument)
+    db.commit()
+    db.close()
+
+    return { "success": True } 
