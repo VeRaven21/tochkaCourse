@@ -138,3 +138,34 @@ def add_instrument(request: instrumentRequest, authorization: str):
     db.close()
 
     return { "success": True } 
+
+@router.delete("/instrument/{ticker}")
+def delete_instrument(ticker: str, authorization: str):
+    """Deletes an instrument by ticker
+
+    Args:
+        ticker (str): Ticker of the instrument to delete
+        authorization (str): Admin authorization token
+
+    Raises:
+        HTTPException: Raises 422 if the user is not an admin
+        HTTPException: Raises 422 if the instrument is not found
+
+    Returns:
+        str: Success message
+    """
+    db = next(get_db())
+    # Check if the user is an admin
+    if not verify_admin_key(authorization):
+        raise HTTPException(422, detail="User is not an admin")
+    
+    stmt = select(Instrument).where(Instrument.ticker == ticker)
+    instrument = db.execute(stmt).scalars().first()
+    if not instrument:
+        raise HTTPException(422, detail="Instrument not found")
+    
+    db.delete(instrument)
+    db.commit()
+    db.close()
+
+    return { "success": True }
