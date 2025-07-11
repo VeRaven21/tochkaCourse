@@ -14,13 +14,8 @@ from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 # Load database credentials 
 load_dotenv()
 
-user = os.getenv("DB_USER")
-password = os.getenv("DB_PSWD")
-port = os.getenv("DB_PORT")
-db_name = os.getenv("DB_NAME")
-db_host = os.getenv("DB_HOST")
+url = str(os.getenv("DATABASE_URL", "postgresql+psycopg2://user:password@db:5432/mydb"))
 
-url = f'postgresql+psycopg2://{user}:{password}@{db_host}:{port}/{db_name}'
 
 engine = create_engine(
     url,
@@ -40,7 +35,7 @@ OrderStatusEnum = Enum('NEW', 'EXECUTED', 'PARTIALLY_EXECUTED', name='order_stat
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     name = Column(String, nullable=False)
     role = Column(RolesEnum, nullable=False)
     regdate = Column(DateTime, default=datetime.now(timezone.utc))
@@ -50,13 +45,13 @@ class Instrument(Base):
     __tablename__ = 'instruments'
 
     id = Column(Integer, primary_key=True)
-    ticker = Column(String)
+    ticker = Column(String, unique=True, nullable=False)
     
 
 class LimitOrder(Base):
     __tablename__ = 'limit_orders'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     status = Column(OrderStatusEnum, nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     timestamp = Column(DateTime, default=datetime.now(timezone.utc))
@@ -69,7 +64,7 @@ class LimitOrder(Base):
 class MarketOrder(Base):
     __tablename__ = 'market_orders'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     status = Column(OrderStatusEnum, nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     timestamp = Column(DateTime, default=datetime.now(timezone.utc))
@@ -81,7 +76,7 @@ class MarketOrder(Base):
 class Balance(Base):
     __tablename__ = 'balances'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     timestamp = Column(DateTime, default=datetime.now(timezone.utc))
     ticker = Column(String, ForeignKey('instruments.ticker'), nullable=False)
