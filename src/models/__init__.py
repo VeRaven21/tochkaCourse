@@ -5,6 +5,6 @@ from typing import Literal
 
 class User(BaseModel):
     name: str    
-    role: Literal["USER", "ADMIN"]
+    role: str
     regdate: datetime
     api_key: str
